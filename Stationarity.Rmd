@@ -10,10 +10,13 @@ First, we can generate a couple example time series signals, $y(t)$. One that we
 ```{r}
 y_stationary <- rnorm(M,mean=1,sd=1) # the stationary signal
 y_trend      <- cumsum(rnorm(M,mean=1,sd=4))+t/100 # our ts with a trend
-y_trend      <- y_trend/max(y_trend) # lets normalize for simplicity
+# lets normalize each for simplicity
+y_stationary<- y_stationary/max(y_stationary) 
+y_trend      <- y_trend/max(y_trend) 
 ```
 
-Second, we can check each for characteristics of stationarity by looking at the autocorrelation functions (ACF) of each signal. For a stationary signal, because we expect no dependence with time, we would expect the ACF to go to 0 for each time lag (0+$\tau$). Lets visualize the signals and ACFs:
+
+Second, we can check each for characteristics of stationarity by looking at the autocorrelation functions (ACF) of each signal. For a stationary signal, because we expect no dependence with time, we would expect the ACF to go to 0 for each time lag ($\tau$). Lets visualize the signals and ACFs xxx:
 
 ```{r}
 plot.new()
@@ -27,7 +30,6 @@ plot(y_stationary,
      main = "Stationary signal")
 acf(y_stationary,lag.max = length(y_stationary),
          xlab = "lag #", ylab = 'ACF',main=' ')
-
 # the trend signal and ACF
 plot(y_trend,
      type='l',col='red',
@@ -36,6 +38,7 @@ plot(y_trend,
      main = "Trend signal")
 acf(y_trend,lag.max = length(y_trend),
          xlab = "lag #", ylab = 'ACF', main=' ')
+
 ```
 
 
