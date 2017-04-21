@@ -1,15 +1,27 @@
 ---
 title: "Stationarity"
-output: html_notebook
+#output: html_notebook
+output: 
+  github_document:
+  # add TOC
+    toc: true
+    toc_depth: 2
+  # figures
+    fig_width: 5
+    fig_height: 5
+    dev: jpeg
+---
 ---
 When investigating a time series, one of the first things to check before building an ARIMA model is to check that the series is stationary. That is, it needs to be determined that the time series is constant in mean and variance are constant and not dependent on time. 
 
 Here, we will look at a couple methods for checking stationarity. If the time series is provided with seasonality, a trend, or a change point in the mean or variance, then the influences need to be removed or accounted for. 
 
 First, we can generate a couple example time series signals, $y(t)$. One that we know is stationary (Guassian noise) and one with a trend (cummulative sum of Gaussian noise):
+
 ```{r}
-y_stationary <- rnorm(M,mean=1,sd=1) # the stationary signal
-y_trend      <- cumsum(rnorm(M,mean=1,sd=4))+t/100 # our ts with a trend
+t = 0:300
+y_stationary <- rnorm(length(t),mean=1,sd=1) # the stationary signal
+y_trend      <- cumsum(rnorm(length(t),mean=1,sd=4))+t/100 # our ts with a trend
 # lets normalize each for simplicity
 y_stationary<- y_stationary/max(y_stationary) 
 y_trend      <- y_trend/max(y_trend) 
@@ -18,12 +30,13 @@ y_trend      <- y_trend/max(y_trend)
 
 Second, we can check each for characteristics of stationarity by looking at the autocorrelation functions (ACF) of each signal. For a stationary signal, because we expect no dependence with time, we would expect the ACF to go to 0 for each time lag ($\tau$). Lets visualize the signals and ACFs xxx:
 
+
 ```{r}
 plot.new()
 frame()
 par(mfcol=c(2,2))
 # the stationary signal and ACF
-plot(y_stationary,
+plot(t,y_stationary,
      type='l',col='red',
      xlab = "time (t)",
      ylab = "Y(t)",
@@ -31,7 +44,7 @@ plot(y_stationary,
 acf(y_stationary,lag.max = length(y_stationary),
          xlab = "lag #", ylab = 'ACF',main=' ')
 # the trend signal and ACF
-plot(y_trend,
+plot(t,y_trend,
      type='l',col='red',
      xlab = "time (t)",
      ylab = "Y(t)",
