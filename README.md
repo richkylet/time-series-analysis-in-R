@@ -9,6 +9,6 @@ Please follow the links below to view the R notebooks (.Rmd) on my public [rpubs
 1. [Stationarity testing](http://rpubs.com/richkt/269797) of time series signals
 2. [Change point detection](http://rpubs.com/richkt/269908) in time series signals
 3. Simple Component Analysis
-4. Exponential smoothing
+4. Decomposing time series signals (removal of seasonality, trend, etc)
 4. ARIMA model
 
