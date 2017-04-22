@@ -1,5 +1,5 @@
 ---
-title: "Stationarity"
+title: "Stationarity Testing"
 #output: html_notebook
 output: 
   github_document:
@@ -7,11 +7,12 @@ output:
     toc: true
     toc_depth: 2
   # figures
-    fig_width: 5
-    fig_height: 5
+    fig_width: 8
+    fig_height: 7
     dev: jpeg
 ---
----
+
+
 When investigating a time series, one of the first things to check before building an ARIMA model is to check that the series is stationary. That is, it needs to be determined that the time series is constant in mean and variance are constant and not dependent on time. 
 
 Here, we will look at a couple methods for checking stationarity. If the time series is provided with seasonality, a trend, or a change point in the mean or variance, then the influences need to be removed or accounted for. 
@@ -20,7 +21,7 @@ First, we can generate a couple example time series signals, $y(t)$. One that we
 
 ```{r}
 t = 0:300
-y_stationary <- rnorm(length(t),mean=1,sd=1) # the stationary signal
+y_stationary <- rnorm(length(t),mean=1,sd=1) # the stationary time series (ts)
 y_trend      <- cumsum(rnorm(length(t),mean=1,sd=4))+t/100 # our ts with a trend
 # lets normalize each for simplicity
 y_stationary<- y_stationary/max(y_stationary) 
@@ -28,7 +29,7 @@ y_trend      <- y_trend/max(y_trend)
 ```
 
 
-Second, we can check each for characteristics of stationarity by looking at the autocorrelation functions (ACF) of each signal. For a stationary signal, because we expect no dependence with time, we would expect the ACF to go to 0 for each time lag ($\tau$). Lets visualize the signals and ACFs xxx:
+Second, we can check each for characteristics of stationarity by looking at the autocorrelation functions (ACF) of each signal. For a stationary signal, because we expect no dependence with time, we would expect the ACF to go to 0 for each time lag ($\tau$). Lets visualize the signals and ACFs:
 
 
 ```{r}
@@ -54,4 +55,28 @@ acf(y_trend,lag.max = length(y_trend),
 
 ```
 
+Notably, the stationary signal (top left) results in few significant lags that exceed the confidence interval of the ACF (blue dashed line, bottom left) . In comparison, the time series with a trend (top right) results in almost all lags exceeding the confidence interval of the ACF (bottom right). Qualitatively, we can see and conclude from the ACFs that the signal on the left is stationary (due to the lags that die out) while the signal on the right is not stationary (since later lags exceed the confidence interval).
+
+Quantitatively, we can also use built-in test for testing stationariy. First, the Ljung-Box test examines whether there is significant evidence for non-zero correlations at given lags (1-25 shown below), with the null hypothesis of independence in a given time series (a non-stationary signal will have a low $p$-value). 
+
+```{r}
+lag.length = 25
+Box.test(y_stationary, lag=lag.length, type="Ljung-Box") # test stationary signal
+Box.test(y_trend,      lag=lag.length, type="Ljung-Box") # test nonstationary signal
+```
+
+Another test we can conduct is the Augmented Dickey–Fuller (ADF) t-statistic test to find if the series has a unit root (a series with a trend line will have a unit root and result in a large $p$-value).
+
+```{r}
+library(tseries)
+adf.test(y_stationary)
+adf.test(y_trend)
+```
+
+Lastly, we can test if the time series is level or trend stationary using the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test. Here we will test the null hypothesis of trend stationarity (a low $p$-value will indicate a signal that is not trend stationary, has a unit root):
+
+```{r}
+kpss.test(y_stationary, null="Trend")
+kpss.test(y_trend, null="Trend")
+```
 

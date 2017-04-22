@@ -1,0 +1,116 @@
+---
+title: "Change point detection"
+#output: html_notebook
+output: 
+  github_document:
+  # add TOC
+    toc: true
+    toc_depth: 2
+  # figures
+    fig_width: 8
+    fig_height: 7
+    dev: jpeg
+---
+
+Detection of a change point in the mean or variance of a time series is often of interest for many business models. For example, possibly a promotion was sent out at a given time point and you would like to see if there was a significant change in the mean level of sales, likely due to the promotion. One way to detect this change is by conducting change point detection. Below is a simple example illustrating how this is done in R. 
+
+First, lets generate some generic, random signals. We can use these to model random sales as a function of time for the example discussed above. We can make a signal without a change point and a signal with a change in mean at a known time point:
+
+```{r}
+y_ts    <- rnorm(500,mean=1,sd=.5) # random signal without a changepoint
+y_ts_CP <- c(rnorm(250,mean=1,sd=.5), rnorm(250,mean=3,sd=1)) # rand signal w\ changepoint
+```
+
+Second, we need to identify penalty parameters for the algorithm we will use for testing changepoint detection against. For this example, we will be using the [PELT algorithm](https://arxiv.org/pdf/1101.1438.pdf). We can do this by making 'elbow plots' and using the penalty parameter value at the elbow. We will define a function `cptfn' for running through a sequence of different penalty parameters, then plot for each time series:
+
+```{r}
+library(changepoint)
+
+cptfn <- function(data, pen) {
+  ans <- cpt.mean(data, test.stat="Normal", method = "PELT", penalty = "Manual", pen.value = pen) 
+  length(cpts(ans)) +1
+}
+ 
+# evaluate and plot results:
+plot.new()
+frame()
+par(mfcol=c(2,2))
+# run cptfn for the signal with a known change point
+pen.vals <- seq(0, 12,.2)
+elbowplotData <- unlist(lapply(pen.vals, function(p) 
+                  cptfn(data = y_ts, pen = p)))
+plot(y_ts,type='l',col='red',
+     xlab = "time",
+     ylab = " Y(t)",
+     main = "Stationary signal (constant mean)")
+plot(pen.vals,elbowplotData, 
+     xlab = "PELT penalty parameter",
+     ylab = " ",
+     main = " ")
+
+# run cptfn for the signal with a known change point
+elbowplotData <- unlist(lapply(pen.vals, function(p) 
+                  cptfn(data = y_ts_CP, pen = p)))
+plot(y_ts_CP,type='l',col='red',
+     xlab = "time",
+     ylab = " Y(t)",
+     main = "Change in mean signal")
+plot(pen.vals,elbowplotData,
+     xlab = "PELT penalty parameter",
+     ylab = " ",
+     main = " ")
+
+```
+
+From the elbow plots, specifically the botthom right plot, we can see that a penalty parameter value (`penalty.val`) of approximately 8 should be sufficient to avoid spurrious change point detection. So we can apply the changepoint mean function (`cpt.mean`) to our time series signals using a penalty paramter value of 3 and see if we can identify correctly where the change point occurs:
+
+```{r}
+library(changepoint)
+penalty.val <- 8
+
+cptm_stationary <- cpt.mean(y_ts,    penalty='Manual',pen.value=penalty.val,method='PELT') 
+cpts_stationary <- cpts(cptm_stationary) # change point time points
+
+cptm_CP         <- cpt.mean(y_ts_CP, penalty='Manual',pen.value=penalty.val,method='PELT') 
+cpts_CP         <- cpts(cptm_CP) # change point time points
+cpts_CP
+
+plot.new()
+frame()
+par(mfcol=c(1,2))
+plot(cptm_stationary,
+     xlab = "time",
+     ylab = " Y(t)",
+     main = "Change in mean signal")
+plot(cptm_CP)
+
+```
+
+For this example, using a PELT algorithm and a penalty value of 8, we see that we correctly identify no change on mean in the stationary (constant mean) signal. Also, we correctly find a change in mean at (`cpts_CP`) time=250. 
+
+For fun, we can also look at the ACF that we previously looked at to further identify [characteristics of stationarity](http://rpubs.com/richkt/269797). 
+
+```{r}
+plot.new()
+frame()
+par(mfcol=c(1,2))
+acf(y_ts,lag.max = length(y_ts),
+         xlab = "lag #", ylab = 'ACF', main=' ')
+acf(y_ts_CP,lag.max = length(y_ts),
+         xlab = "lag #", ylab = 'ACF', main=' ')
+```
+
+Now, we can conclude that the first signal has a constant mean and is stationary. The second signal is not stationary. Further, it has a change in mean. 
+
+Looking back again at the other tests for stationarity, we can further evaluate the second signal:
+
+```{r}
+library(tseries)
+Box.test(y_ts_CP,      lag=300, type="Ljung-Box") # test nonstationary signal
+adf.test(y_ts_CP)
+kpss.test(y_ts_CP, null="Trend")
+
+```
+
+As expected, the Box-Ljung test shows that there is significant evidence of non-zero correlations, however the Augmented Dickey–Fuller shows that there is not evidence of a unit root, but does show through the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test that the time series is not trend stationary (as also shown through the change point detection). Normally, we could have conducted these tests prior to change point detection. 
+
